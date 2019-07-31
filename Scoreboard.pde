@@ -1,6 +1,11 @@
-// X:Site Points Machine VERSION 0.1
+// X:Site Points Machine VERSION 0.2
+// Changes:
+//     option to change number of teams added - max still 5 (numberOfTeams.txt)
+//     improved code comments
+//     option to change full screen number or windowed resolution from a file (fullscreen.txt)
 
 Table teamInfo;
+int numberOfTeams;
 
 final char animationHotkey = ' ';
 final char doAllHotkey = 'a';
@@ -24,10 +29,24 @@ int[][] randomScores = new int[10][5];
 // chartArea = {top, bottom, left, right}
 float[] chartArea = new float[4];
 
-void setup() {
-  fullScreen(1);
-  //size(1024, 768);
+// Teams showing
+// if showTeam[team] == 0 then do not show, else use this score.
+boolean[] showTeam;
 
+void settings(){
+  String[] fullscreenFile = loadStrings("fullscreen.txt"); //<>//
+  
+  String[] windowedResolution = match(fullscreenFile[0],"([0-9]+)x([0-9]+)");
+  if (windowedResolution == null){
+    int fullScreenNum = int(fullscreenFile[0]);
+    fullScreen(fullScreenNum);
+  } else {
+    size(int(windowedResolution[1]), int(windowedResolution[2]));
+  }
+}
+
+void setup() {
+  //size(1024, 768);
   gridSizeWidth = width / 24;
   gridSizeHeight = height / 24;
 
@@ -39,24 +58,33 @@ void setup() {
   // get scores from disk
   teamInfo = loadTable("scores.csv", "header, csv");
   //access with teamInfo.getFloat(team, header) (also use getString or getInt with same syntax)
-  
-  int[] scores = new int[5];
-  for (int team = 0; team < 5; team++) {
+
+  // get number of teams to read
+  String[] teamNumFile = loadStrings("numberOfTeams.txt");
+  numberOfTeams = int(teamNumFile[0]);
+
+  // get scores for teams from CSV
+  int[] scores = new int[numberOfTeams];
+  for (int team = 0; team < numberOfTeams; team++) {
     scores[team] = teamInfo.getInt(team, "Score");
   }
+  // store max score for scale purposes
   maxScore = max(scores);
-  
+
+  // generate random numbers for animation
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 5; j++) {
+      // keep random numbers between halfway point and max score
       int score = int(random(maxScore/2, maxScore));
       randomScores[i][j] = score;
     }
   }
+  
+  showTeam = new boolean[numberOfTeams];
+  for (int i = 0; i < numberOfTeams; i++) {
+    showTeam[i] = false;
+  }
 }
-
-// Teams showing
-// if showTeam[team] == 0 then do not show, else use this score.
-boolean[] showTeam = {false, false, false, false, false};
 
 // changing this to 0 triggers the animation. Use runAnimation() to trigger correctly.
 // changing this to 10 goes to final state with any showTeam variables set to true.
@@ -67,7 +95,7 @@ void draw() {
 
   // if animation on, run through the animation
   if (animationFrame > -1 && animationFrame < 10) {
-    for (int team = 0; team < 5; team++) {
+    for (int team = 0; team < numberOfTeams; team++) {
       drawBar(team, randomScores[animationFrame][team]);
     }
     // pause for a bit to let people see the change
@@ -78,14 +106,15 @@ void draw() {
   // else show final frame of animation, the showTeam listings.
   // runAnimation() will set showTeam to true as it enables the animation.
   else if (animationFrame >= 10) {
-    for (int team = 0; team < 5; team++) {
-      if (showTeam[team]) {
+    for (int team = 0; team < numberOfTeams; team++) {
+      if (showTeam[team]) { //<>//
         drawBar(team, teamInfo.getInt(team, "Score"));
       }
     }
   }
 }
 
+// draw the chart background
 void drawBgChart() {
   background(255);
 
@@ -100,9 +129,24 @@ void drawBgChart() {
   noStroke();
 };
 
+// common function for drawing a bar
 void drawBar(int team, int score) {
   // Left to right positions
-  float[] barOffsets = {gridSizeWidth * 3, gridSizeWidth * 7, gridSizeWidth * 11, gridSizeWidth * 15, gridSizeWidth * 19};
+  float[] barOffsets5 = {gridSizeWidth * 3, gridSizeWidth * 7, gridSizeWidth * 11, gridSizeWidth * 15, gridSizeWidth * 19};
+
+  float[] barOffsets = new float[numberOfTeams];
+  int firstDistance = 3;
+  int maxDistance = 19;
+  int difference = maxDistance - firstDistance; // 16
+  int distanceBetween = difference / (numberOfTeams - 1);
+
+  println(distanceBetween); //<>//
+
+  for (int t=0; t < numberOfTeams; t++) {
+    barOffsets[t] = gridSizeWidth * (firstDistance + (distanceBetween * t));
+  }
+
+  println(barOffsets);
 
   // Calculate max height
   float chartHeight = chartArea[1] - chartArea[0];
@@ -124,7 +168,7 @@ void drawBar(int team, int score) {
   color green = teamInfo.getInt(team, "Green");
   color blue = teamInfo.getInt(team, "Blue");
   String name = teamInfo.getString(team, "Name");
-  
+
   // Draw the bar and text labels
   rectMode(CORNER);
   fill(color(red, green, blue));
@@ -163,9 +207,9 @@ void checkTeamHotkey() {
   // is the key pressed a team hotkey?
   // if not, do nothing.
   int teamNumber = -1;
-  for (int team = 0; team < 5; team++) {
+  for (int team = 0; team < numberOfTeams; team++) {
     String teamKey = teamInfo.getString(team, "Hotkey"); 
-    if (teamKey.charAt(0) == key) { //<>//
+    if (teamKey.charAt(0) == key) {
       teamNumber = team;
       break;
     }
@@ -183,7 +227,7 @@ void runAnimation() {
 }
 
 void setAllBars(boolean value) {
-  for (int team = 0; team < 5; team++) {
+  for (int team = 0; team < numberOfTeams; team++) {
     showTeam[team] = value;
   }
 };

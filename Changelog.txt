@@ -1,0 +1,6 @@
+0.2 -
+	option to change number of teams added - max still 5 (numberOfTeams.txt)
+	improved code comments
+	option to change full screen number or windowed resolution from a file (fullscreen.txt)
+
+0.1 - Initial Code
