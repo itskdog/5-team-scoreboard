@@ -1,8 +1,6 @@
-// X:Site Points Machine VERSION 0.2
+// X:Site Points Machine VERSION 0.3
 // Changes:
-//     option to change number of teams added - max still 5 (numberOfTeams.txt)
-//     improved code comments
-//     option to change full screen number or windowed resolution from a file (fullscreen.txt)
+//     Dark mode: swap the black & white colours to work better with lighter team colours
 
 Table teamInfo;
 int numberOfTeams;
@@ -33,10 +31,13 @@ float[] chartArea = new float[4];
 // if showTeam[team] == 0 then do not show, else use this score.
 boolean[] showTeam;
 
+// Dark or light mode
+boolean darkMode;
+
 void settings(){
-  String[] fullscreenFile = loadStrings("fullscreen.txt"); //<>//
+  String[] fullscreenFile = loadStrings("fullscreen.txt");
   
-  String[] windowedResolution = match(fullscreenFile[0],"([0-9]+)x([0-9]+)");
+  String[] windowedResolution = match(fullscreenFile[0],"([0-9]+)x([0-9]+)");  
   if (windowedResolution == null){
     int fullScreenNum = int(fullscreenFile[0]);
     fullScreen(fullScreenNum);
@@ -84,6 +85,15 @@ void setup() {
   for (int i = 0; i < numberOfTeams; i++) {
     showTeam[i] = false;
   }
+  
+  // dark or light mode
+  String[] colourModeFile = loadStrings("colourMode.txt"); //<>//
+  if (colourModeFile[0].equals("dark")){
+    darkMode = true;
+  } else {
+    darkMode = false;
+  }
+  
 }
 
 // changing this to 0 triggers the animation. Use runAnimation() to trigger correctly.
@@ -107,7 +117,7 @@ void draw() {
   // runAnimation() will set showTeam to true as it enables the animation.
   else if (animationFrame >= 10) {
     for (int team = 0; team < numberOfTeams; team++) {
-      if (showTeam[team]) { //<>//
+      if (showTeam[team]) {
         drawBar(team, teamInfo.getInt(team, "Score"));
       }
     }
@@ -116,11 +126,13 @@ void draw() {
 
 // draw the chart background
 void drawBgChart() {
-  background(255);
+  int bgCol = (darkMode) ? 0 : 255;
+  background(bgCol);
 
   // Draw lines
   // base line
-  stroke(0);
+  int stCol = (darkMode) ? 255 : 0;
+  stroke(stCol);
   line(gridSizeWidth * 1, gridSizeHeight * 22, gridSizeWidth * 23, gridSizeHeight * 22);
 
   // left line
@@ -140,7 +152,7 @@ void drawBar(int team, int score) {
   int difference = maxDistance - firstDistance; // 16
   int distanceBetween = difference / (numberOfTeams - 1);
 
-  println(distanceBetween); //<>//
+  println(distanceBetween);
 
   for (int t=0; t < numberOfTeams; t++) {
     barOffsets[t] = gridSizeWidth * (firstDistance + (distanceBetween * t));
